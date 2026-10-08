@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
-import { mockProfile, mockAdmission, mockCalendrier, mockDocuments, mockActualites } from "@/lib/mock-data";
+import { useMe, useRefreshMe } from "@/lib/use-me";
+import { supabase } from "@/integrations/supabase/client";
+import { mockAdmission, mockCalendrier, mockDocuments, mockActualites } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -33,9 +35,28 @@ function SectionIcon({ icon: Icon }: { icon: typeof User }) {
 }
 
 function MonParcours() {
-  const [profile, setProfile] = useState(mockProfile);
-  const [draft, setDraft] = useState(mockProfile);
+  const { data: me, isLoading } = useMe();
+  const refresh = useRefreshMe();
+  const empty = { prenom: "", nom: "", email: "", telephone: "" };
+  const [draft, setDraft] = useState(empty);
   const [editOpen, setEditOpen] = useState(false);
+  if (isLoading || !me) return <AppShell title="Mon parcours"><p className="text-sm text-muted-foreground">Chargement…</p></AppShell>;
+  const profile = {
+    prenom: me.profile.prenom ?? "", nom: me.profile.nom ?? "", email: me.profile.email ?? "", telephone: me.profile.telephone ?? "",
+    intitule_formation: me.parcours?.intitule_formation ?? "Formation à préciser",
+    annee_scolaire: me.parcours?.annee_scolaire ?? "—",
+    etape_courante: (me.parcours?.etape_courante ?? "01_INSCRIPTION") as "01_INSCRIPTION",
+  };
+  const adm = {
+    statut_dossier: me.admission?.statut_dossier ?? "BROUILLON",
+    statut_cv: me.admission?.statut_cv ?? "EN_ATTENTE_VALIDATION",
+    commentaire_conseiller: me.admission?.commentaire_conseiller,
+  };
+  async function save() {
+    const { error } = await supabase.from("profiles").update({ prenom: draft.prenom, nom: draft.nom, telephone: draft.telephone }).eq("id", me!.profile.id);
+    if (error) return toast.error("Enregistrement impossible");
+    await refresh(); setEditOpen(false); toast.success("Informations mises à jour");
+  }
 
   const sections = [
     { id: "infos", icon: User, title: "Mes informations", hint: "Profil et coordonnées" },
@@ -80,7 +101,7 @@ function MonParcours() {
                       </div>
                     ))}
                   </dl>
-                  <Button variant="outline" onClick={() => { setDraft(profile); setEditOpen(true); }}>
+                  <Button variant="outline" onClick={() => { setDraft({ prenom: profile.prenom, nom: profile.nom, email: profile.email, telephone: profile.telephone }); setEditOpen(true); }}>
                     <Pencil /> Modifier mes informations
                   </Button>
                 </div>
@@ -89,16 +110,16 @@ function MonParcours() {
               {s.id === "admissions" && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2 text-sm">Dossier <StatusBadge status={mockAdmission.statut_dossier} /></div>
-                    <div className="flex items-center gap-2 text-sm">CV <StatusBadge status={mockAdmission.statut_cv} /></div>
+                    <div className="flex items-center gap-2 text-sm">Dossier <StatusBadge status={adm.statut_dossier} /></div>
+                    <div className="flex items-center gap-2 text-sm">CV <StatusBadge status={adm.statut_cv} /></div>
                   </div>
-                  <div className="flex gap-3 rounded-lg bg-warning-soft p-3 text-sm">
+                  {adm.commentaire_conseiller && <div className="flex gap-3 rounded-lg bg-warning-soft p-3 text-sm">
                     <MessageSquareText className="mt-0.5 size-4 shrink-0 text-warning" />
                     <div>
                       <p className="font-semibold">Commentaire du conseiller</p>
-                      <p className="text-muted-foreground">{mockAdmission.commentaire_conseiller}</p>
+                      <p className="text-muted-foreground">{adm.commentaire_conseiller}</p>
                     </div>
-                  </div>
+                  </div>}
                   <ul className="space-y-2">
                     {mockAdmission.etapes.map((e) => (
                       <li key={e.label} className="flex items-center gap-2 text-sm">
@@ -177,12 +198,12 @@ function MonParcours() {
             {(["prenom", "nom", "email", "telephone"] as const).map((f) => (
               <div key={f} className="grid gap-1.5">
                 <Label htmlFor={f} className="capitalize">{f === "telephone" ? "Téléphone" : f === "prenom" ? "Prénom" : f === "email" ? "E-mail" : "Nom"}</Label>
-                <Input id={f} value={draft[f]} onChange={(e) => setDraft({ ...draft, [f]: e.target.value })} />
+                <Input id={f} disabled={f === "email"} value={draft[f]} onChange={(e) => setDraft({ ...draft, [f]: e.target.value })} />
               </div>
             ))}
           </div>
           <SheetFooter>
-            <Button onClick={() => { setProfile(draft); setEditOpen(false); toast.success("Informations mises à jour"); }}>Enregistrer</Button>
+            <Button onClick={save}>Enregistrer</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
