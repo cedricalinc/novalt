@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { mockActualites } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/offres")({
+export const Route = createFileRoute("/_authenticated/offres")({
   head: () => ({
     meta: [
       { title: "Recherche & offres — Extranet CFA" },

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { mockProfile } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/parametres")({
+export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({
     meta: [
       { title: "Paramètres — Extranet CFA" },
