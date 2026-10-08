@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { mockProfile } from "@/lib/mock-data";
+import { useMe, useRefreshMe } from "@/lib/use-me";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/parametres")({
+export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({
     meta: [
       { title: "Paramètres — Extranet CFA" },
@@ -31,8 +32,28 @@ const NOTIFS = [
 ] as const;
 
 function Parametres() {
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({ notif_candidatures: true, notif_admissions: true, notif_entretiens: true, notif_documents: false });
+  const { data: me } = useMe();
+  const refresh = useRefreshMe();
+  const prefs = (me?.prefs ?? {}) as Record<string, boolean>;
   const [dialog, setDialog] = useState<null | "email" | "password" | "delete">(null);
+  const [v, setV] = useState({ email: "", current: "", next: "" });
+  async function setPref(key: string, val: boolean) {
+    const { error } = await supabase.from("user_preferences").update({ [key]: val }).eq("user_id", me!.profile.id);
+    if (error) return toast.error("Enregistrement impossible");
+    await refresh(); toast.success("Préférence enregistrée");
+  }
+  async function submit() {
+    if (dialog === "email") {
+      const { error } = await supabase.auth.updateUser({ email: v.email });
+      if (error) return toast.error(error.message);
+      toast.success("Confirme le changement via le lien envoyé à ta nouvelle adresse");
+    } else if (dialog === "password") {
+      const { error } = await supabase.auth.updateUser({ password: v.next, current_password: v.current } as never);
+      if (error) return toast.error(error.message);
+      toast.success("Mot de passe modifié");
+    } else toast.success("Demande de suppression envoyée au CFA");
+    setV({ email: "", current: "", next: "" }); setDialog(null);
+  }
 
   return (
     <AppShell title="Paramètres">
@@ -44,7 +65,7 @@ function Parametres() {
         </TabsList>
 
         <TabsContent value="identifiants" className="mt-4 space-y-3">
-          <Row icon={Mail} title="Adresse e-mail" value={mockProfile.email} action="Modifier" onClick={() => setDialog("email")} />
+          <Row icon={Mail} title="Adresse e-mail" value={me?.profile.email ?? ""} action="Modifier" onClick={() => setDialog("email")} />
           <Row icon={KeyRound} title="Mot de passe" value="••••••••••" action="Modifier" onClick={() => setDialog("password")} />
         </TabsContent>
 
@@ -57,7 +78,7 @@ function Parametres() {
                   <span className="block text-sm font-semibold">{n.label}</span>
                   <span className="block text-xs text-muted-foreground">{n.desc}</span>
                 </span>
-                <Switch checked={prefs[n.key] ?? false} onCheckedChange={(v) => { setPrefs({ ...prefs, [n.key]: v }); toast.success("Préférence enregistrée"); }} />
+                <Switch checked={prefs[n.key] ?? false} disabled={!me} onCheckedChange={(val) => setPref(n.key, val)} />
               </label>
             ))}
           </div>
@@ -80,17 +101,17 @@ function Parametres() {
             {dialog === "delete" && <DialogDescription>Toutes tes données seront supprimées. Cette action est irréversible.</DialogDescription>}
           </DialogHeader>
           {dialog === "email" && (
-            <div className="grid gap-1.5"><Label htmlFor="em">Nouvel e-mail</Label><Input id="em" type="email" defaultValue={mockProfile.email} /></div>
+            <div className="grid gap-1.5"><Label htmlFor="em">Nouvel e-mail</Label><Input id="em" type="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} /></div>
           )}
           {dialog === "password" && (
             <div className="grid gap-3">
-              <div className="grid gap-1.5"><Label htmlFor="p1">Mot de passe actuel</Label><Input id="p1" type="password" /></div>
-              <div className="grid gap-1.5"><Label htmlFor="p2">Nouveau mot de passe</Label><Input id="p2" type="password" /></div>
+              <div className="grid gap-1.5"><Label htmlFor="p1">Mot de passe actuel</Label><Input id="p1" type="password" value={v.current} onChange={(e) => setV({ ...v, current: e.target.value })} /></div>
+              <div className="grid gap-1.5"><Label htmlFor="p2">Nouveau mot de passe</Label><Input id="p2" type="password" value={v.next} onChange={(e) => setV({ ...v, next: e.target.value })} /></div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog(null)}>Annuler</Button>
-            <Button variant={dialog === "delete" ? "destructive" : "default"} onClick={() => { toast.success(dialog === "delete" ? "Demande de suppression envoyée" : "Modification enregistrée"); setDialog(null); }}>
+            <Button variant={dialog === "delete" ? "destructive" : "default"} onClick={submit}>
               {dialog === "delete" ? "Supprimer" : "Enregistrer"}
             </Button>
           </DialogFooter>
