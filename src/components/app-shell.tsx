@@ -10,7 +10,7 @@ const NAV = [
 ] as const;
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
-  const initials = mockProfile.prenom[0] + mockProfile.nom[0];
+  const initials = mockProfile.prenom.charAt(0) + mockProfile.nom.charAt(0);
   return (
     <div className="min-h-screen bg-background md:flex">
       {/* Sidebar desktop */}

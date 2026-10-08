@@ -57,7 +57,7 @@ function Parametres() {
                   <span className="block text-sm font-semibold">{n.label}</span>
                   <span className="block text-xs text-muted-foreground">{n.desc}</span>
                 </span>
-                <Switch checked={prefs[n.key]} onCheckedChange={(v) => { setPrefs({ ...prefs, [n.key]: v }); toast.success("Préférence enregistrée"); }} />
+                <Switch checked={prefs[n.key] ?? false} onCheckedChange={(v) => { setPrefs({ ...prefs, [n.key]: v }); toast.success("Préférence enregistrée"); }} />
               </label>
             ))}
           </div>
