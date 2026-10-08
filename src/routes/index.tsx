@@ -48,7 +48,7 @@ function MonParcours() {
   return (
     <AppShell title="Mon parcours">
       <div className="mb-4">
-        <p className="text-sm text-muted-foreground">Bonjour {profile.prenom} 👋</p>
+        <p className="text-sm text-muted-foreground">Bonjour {profile.prenom}</p>
         <p className="font-semibold">{profile.intitule_formation}</p>
         <p className="text-xs text-muted-foreground">Année {profile.annee_scolaire}</p>
       </div>
