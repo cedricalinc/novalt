@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/use-me";
-import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell, LogOut } from "lucide-react";
+import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell, LogOut, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
 const NAV = [
@@ -37,7 +37,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           </div>
         </div>
         <nav className="flex flex-col gap-1">
-          {NAV.map((n) => (
+          {[...NAV, ...(me?.profile.role === "ADMIN_CFA" ? [{ to: "/admin", label: "Espace CFA", icon: ShieldCheck }] as const : [])].map((n) => (
             <Link
               key={n.to}
               to={n.to}
@@ -54,7 +54,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           <div className="grid size-9 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{initials}</div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{prenom} {nom}</p>
-            <p className="truncate text-xs text-muted-foreground">Candidat</p>
+            <p className="truncate text-xs text-muted-foreground">{me?.profile.role === "ADMIN_CFA" ? "Équipe CFA" : "Candidat"}</p>
           </div>
           <button onClick={signOut} aria-label="Se déconnecter" className="ml-auto text-muted-foreground hover:text-foreground"><LogOut className="size-4" /></button>
         </div>
