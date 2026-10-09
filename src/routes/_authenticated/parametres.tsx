@@ -38,18 +38,18 @@ function Parametres() {
   const [dialog, setDialog] = useState<null | "email" | "password" | "delete">(null);
   const [v, setV] = useState({ email: "", current: "", next: "" });
   async function setPref(key: string, val: boolean) {
-    const { error } = await supabase.from("user_preferences").update({ [key]: val }).eq("user_id", me!.profile.id);
-    if (error) return toast.error("Enregistrement impossible");
+    const { error } = await supabase.from("user_preferences").update({ [key]: val } as never).eq("user_id", me!.profile.id);
+    if (error) { toast.error("Enregistrement impossible"); return; }
     await refresh(); toast.success("Préférence enregistrée");
   }
   async function submit() {
     if (dialog === "email") {
       const { error } = await supabase.auth.updateUser({ email: v.email });
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       toast.success("Confirme le changement via le lien envoyé à ta nouvelle adresse");
     } else if (dialog === "password") {
       const { error } = await supabase.auth.updateUser({ password: v.next, current_password: v.current } as never);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       toast.success("Mot de passe modifié");
     } else toast.success("Demande de suppression envoyée au CFA");
     setV({ email: "", current: "", next: "" }); setDialog(null);

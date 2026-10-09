@@ -1,7 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useMe } from "@/lib/use-me";
+import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
-import { mockProfile } from "@/lib/mock-data";
 
 const NAV = [
   { to: "/", label: "Mon parcours", icon: RouteIcon },
@@ -10,7 +12,17 @@ const NAV = [
 ] as const;
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
-  const initials = mockProfile.prenom.charAt(0) + mockProfile.nom.charAt(0);
+  const { data: me } = useMe();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const prenom = me?.profile.prenom ?? "";
+  const nom = me?.profile.nom ?? "";
+  const initials = (prenom.charAt(0) + nom.charAt(0)).toUpperCase() || "?";
+  async function signOut() {
+    await qc.cancelQueries(); qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
   return (
     <div className="min-h-screen bg-background md:flex">
       {/* Sidebar desktop */}
@@ -41,19 +53,23 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
         <div className="mt-auto flex items-center gap-3 rounded-lg bg-muted p-3">
           <div className="grid size-9 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{initials}</div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{mockProfile.prenom} {mockProfile.nom}</p>
+            <p className="truncate text-sm font-semibold">{prenom} {nom}</p>
             <p className="truncate text-xs text-muted-foreground">Candidat</p>
           </div>
+          <button onClick={signOut} aria-label="Se déconnecter" className="ml-auto text-muted-foreground hover:text-foreground"><LogOut className="size-4" /></button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/90 px-4 py-3 backdrop-blur md:px-8 md:py-4">
           <h1 className="text-lg font-bold md:text-xl">{title}</h1>
+          <div className="flex items-center gap-2">
+          <button onClick={signOut} aria-label="Se déconnecter" className="grid size-9 place-items-center rounded-full bg-muted text-muted-foreground md:hidden"><LogOut className="size-4" /></button>
           <button aria-label="Notifications" className="relative grid size-9 place-items-center rounded-full bg-muted text-muted-foreground">
             <Bell className="size-4" />
             <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />
           </button>
+          </div>
         </header>
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
       </div>

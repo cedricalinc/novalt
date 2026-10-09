@@ -54,7 +54,7 @@ function MonParcours() {
   };
   async function save() {
     const { error } = await supabase.from("profiles").update({ prenom: draft.prenom, nom: draft.nom, telephone: draft.telephone }).eq("id", me!.profile.id);
-    if (error) return toast.error("Enregistrement impossible");
+    if (error) { toast.error("Enregistrement impossible"); return; }
     await refresh(); setEditOpen(false); toast.success("Informations mises à jour");
   }
 

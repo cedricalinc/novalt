@@ -34,7 +34,7 @@ function AuthPage() {
     e.preventDefault(); setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: f.email, password: f.password });
     setLoading(false);
-    if (error) return toast.error("E-mail ou mot de passe incorrect");
+    if (error) { toast.error("E-mail ou mot de passe incorrect"); return; }
     navigate({ to: "/" });
   }
   async function signUp(e: React.FormEvent) {
@@ -44,13 +44,13 @@ function AuthPage() {
       options: { emailRedirectTo: window.location.origin, data: { prenom: f.prenom, nom: f.nom, formation: f.formation } },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Compte créé ! Confirme ton adresse via le lien reçu par e-mail.");
   }
   async function forgot() {
-    if (!f.email) return toast.error("Saisis d'abord ton e-mail");
+    if (!f.email) { toast.error("Saisis d'abord ton e-mail"); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(f.email, { redirectTo: `${window.location.origin}/reset-password` });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("E-mail de réinitialisation envoyé");
   }
 
