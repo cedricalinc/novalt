@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/use-me";
 import { ETAPES } from "@/lib/mock-data";
+import { AdminOffres } from "@/components/admin-offres";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -36,6 +37,7 @@ async function fetchCandidats() {
 
 function AdminPage() {
   const { data: me } = useMe();
+  const [tab, setTab] = useState<"apprentis" | "offres">("apprentis");
   const isAdmin = me?.profile.role === "ADMIN_CFA";
   const list = useQuery({ queryKey: ["admin-candidats"], queryFn: fetchCandidats, enabled: isAdmin });
 
@@ -48,12 +50,22 @@ function AdminPage() {
       </AppShell>
     );
 
+  const apprentis = list.data?.filter((p) => p.profiles?.role === "CANDIDAT") ?? [];
   return (
     <AppShell title="Espace CFA">
-      <p className="mb-4 text-sm text-muted-foreground">{list.data?.length ?? 0} apprenti(s) suivi(s)</p>
-      <div className="flex flex-col gap-3">
-        {list.data?.filter((p) => p.profiles?.role === "CANDIDAT").map((p) => <CandidatCard key={p.id} p={p} />)}
+      <div className="mb-6 flex gap-2">
+        {(["apprentis", "offres"] as const).map((t) => (
+          <Button key={t} size="sm" variant={tab === t ? "default" : "outline"} onClick={() => setTab(t)}>
+            {t === "apprentis" ? "Apprentis" : "Offres & candidatures"}
+          </Button>
+        ))}
       </div>
+      {tab === "offres" ? <AdminOffres /> : <>
+        <p className="mb-4 text-sm text-muted-foreground">{apprentis.length} apprenti(s) suivi(s)</p>
+        <div className="flex flex-col gap-3">
+          {apprentis.map((p) => <CandidatCard key={p.id} p={p} />)}
+        </div>
+      </>}
     </AppShell>
   );
 }
