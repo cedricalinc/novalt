@@ -5,9 +5,13 @@ import { useMe } from "@/lib/use-me";
 import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell, LogOut, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
-const NAV = [
+const STUDENT_NAV = [
   { to: "/", label: "Mon parcours", icon: RouteIcon },
   { to: "/offres", label: "Offres", icon: Briefcase },
+  { to: "/parametres", label: "Paramètres", icon: Settings },
+] as const;
+const STAFF_NAV = [
+  { to: "/admin", label: "Espace CFA", icon: ShieldCheck },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, FileCheck2, CalendarDays, FolderOpen, Newspaper, Upload, Download, MapPin, CheckCircle2, Circle, MessageSquareText, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ function MonParcours() {
   const [draft, setDraft] = useState(empty);
   const [editOpen, setEditOpen] = useState(false);
   if (isLoading || !me) return <AppShell title="Mon parcours"><p className="text-sm text-muted-foreground">Chargement…</p></AppShell>;
+  if (me.profile.role !== "CANDIDAT") return <Navigate to="/admin" replace />;
   const profile = {
     prenom: me.profile.prenom ?? "", nom: me.profile.nom ?? "", email: me.profile.email ?? "", telephone: me.profile.telephone ?? "",
     intitule_formation: me.parcours?.intitule_formation ?? "Formation à préciser",
