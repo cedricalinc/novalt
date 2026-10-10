@@ -5,9 +5,13 @@ import { useMe } from "@/lib/use-me";
 import { Route as RouteIcon, Briefcase, Settings, GraduationCap, Bell, LogOut, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
-const NAV = [
+const STUDENT_NAV = [
   { to: "/", label: "Mon parcours", icon: RouteIcon },
   { to: "/offres", label: "Offres", icon: Briefcase },
+  { to: "/parametres", label: "Paramètres", icon: Settings },
+] as const;
+const STAFF_NAV = [
+  { to: "/admin", label: "Espace CFA", icon: ShieldCheck },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
 
@@ -15,6 +19,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
   const { data: me } = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const isStaff = !!me && me.profile.role !== "CANDIDAT";
+  const NAV: ReadonlyArray<(typeof STUDENT_NAV)[number] | (typeof STAFF_NAV)[number]> = isStaff ? STAFF_NAV : STUDENT_NAV;
   const prenom = me?.profile.prenom ?? "";
   const nom = me?.profile.nom ?? "";
   const initials = (prenom.charAt(0) + nom.charAt(0)).toUpperCase() || "?";

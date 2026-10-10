@@ -15,6 +15,13 @@
       "when": 1791459715043,
       "tag": "0001_auto_parcours_on_signup",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791658436967,
+      "tag": "0002_staff_no_parcours",
+      "breakpoints": true
     }
   ]
 }
