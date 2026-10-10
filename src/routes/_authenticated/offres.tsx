@@ -51,12 +51,12 @@ function Offres() {
 
   async function postuler(offre_id: string) {
     const { error } = await supabase.from("candidatures").insert({ candidat_id: me!.profile.id, offre_id });
-    if (error) return toast.error(error.message.includes("CV") ? "Ton CV doit être validé par le CFA" : "Candidature impossible");
+    if (error) { toast.error(error.message.includes("CV") ? "Ton CV doit être validé par le CFA" : "Candidature impossible"); return; }
     toast.success("Candidature envoyée"); refresh();
   }
   async function accepter(id: string) {
     const { error } = await supabase.from("candidatures").update({ statut: "ACCEPTE" }).eq("id", id);
-    if (error) return toast.error("Action impossible");
+    if (error) { toast.error("Action impossible"); return; }
     toast.success("Offre acceptée — ta fiche de mission est créée"); refresh();
   }
 

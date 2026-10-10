@@ -38,7 +38,7 @@ export function AdminOffres() {
   });
 
   async function create() {
-    if (!f.titre.trim()) return toast.error("Le titre est obligatoire");
+    if (!f.titre.trim()) { toast.error("Le titre est obligatoire"); return; }
     const { error } = await supabase.from("offres_et_ateliers").insert({
       type: f.type as (typeof TYPES)[number]["v"],
       titre: f.titre.trim(),
@@ -47,19 +47,19 @@ export function AdminOffres() {
       description: f.description || null,
       date_evenement: f.date_evenement ? new Date(f.date_evenement).toISOString() : null,
     });
-    if (error) return toast.error("Publication impossible");
+    if (error) { toast.error("Publication impossible"); return; }
     toast.success("Publié");
     setF({ ...f, titre: "", entreprise_nom: "", lieu: "", date_evenement: "", description: "" });
     qc.invalidateQueries({ queryKey: ["offres"] });
   }
   async function remove(id: string) {
     const { error } = await supabase.from("offres_et_ateliers").delete().eq("id", id);
-    if (error) return toast.error("Suppression impossible (des candidatures existent peut-être)");
+    if (error) { toast.error("Suppression impossible (des candidatures existent peut-être)"); return; }
     qc.invalidateQueries({ queryKey: ["offres"] });
   }
   async function setStatut(id: string, statut: (typeof STATUTS)[number]["v"]) {
     const { error } = await supabase.from("candidatures").update({ statut }).eq("id", id);
-    if (error) return toast.error("Modification impossible");
+    if (error) { toast.error("Modification impossible"); return; }
     toast.success("Statut mis à jour");
     qc.invalidateQueries({ queryKey: ["admin-candidatures"] });
     qc.invalidateQueries({ queryKey: ["admin-candidats"] });
