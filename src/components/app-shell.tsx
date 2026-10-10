@@ -19,6 +19,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
   const { data: me } = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const isStaff = !!me && me.profile.role !== "CANDIDAT";
+  const NAV: ReadonlyArray<(typeof STUDENT_NAV)[number] | (typeof STAFF_NAV)[number]> = isStaff ? STAFF_NAV : STUDENT_NAV;
   const prenom = me?.profile.prenom ?? "";
   const nom = me?.profile.nom ?? "";
   const initials = (prenom.charAt(0) + nom.charAt(0)).toUpperCase() || "?";
