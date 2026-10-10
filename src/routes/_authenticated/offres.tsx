@@ -4,7 +4,6 @@ import { Lock, MapPin, Send, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/status-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/use-me";
 
