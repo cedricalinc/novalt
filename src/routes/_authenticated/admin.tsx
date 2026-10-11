@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/use-me";
 import { ETAPES } from "@/lib/mock-data";
 import { AdminOffres } from "@/components/admin-offres";
+import { AdminReferentiels, fetchReferentiels, refQuery } from "@/components/admin-referentiels";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -150,6 +152,16 @@ function CandidatCard({ p }: { p: Row }) {
         </div>
         {adm && <StatusBadge status={adm.statut_cv} />}
       </div>
+      <label className="grid gap-1 text-xs text-muted-foreground">Promotion
+        <select className={sel} value={p.promotion_id ?? ""} onChange={(e) => upd("parcours_cfa", p.id, { promotion_id: e.target.value || null })}>
+          <option value="">Sans promotion</option>
+          {refs?.promotions.map((pr) => {
+            const f = refs.formations.find((x) => x.id === pr.formation_id);
+            const et = refs.etablissements.find((x) => x.id === f?.etablissement_id);
+            return <option key={pr.id} value={pr.id}>{et?.nom} › {f?.intitule} › {pr.nom}</option>;
+          })}
+        </select>
+      </label>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="grid gap-1 text-xs text-muted-foreground">Étape
           <select className={sel} value={p.etape_courante} onChange={(e) => upd("parcours_cfa", p.id, { etape_courante: e.target.value })}>
