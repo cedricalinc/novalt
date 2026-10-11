@@ -103,6 +103,27 @@ export type Database = {
           },
         ]
       }
+      etablissements: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          ville: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          ville?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
       fiches_de_mission: {
         Row: {
           candidature_id: string
@@ -137,6 +158,38 @@ export type Database = {
             columns: ["candidature_id"]
             isOneToOne: true
             referencedRelation: "candidatures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formations: {
+        Row: {
+          created_at: string
+          etablissement_id: string
+          id: string
+          intitule: string
+          niveau: string | null
+        }
+        Insert: {
+          created_at?: string
+          etablissement_id: string
+          id?: string
+          intitule: string
+          niveau?: string | null
+        }
+        Update: {
+          created_at?: string
+          etablissement_id?: string
+          id?: string
+          intitule?: string
+          niveau?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formations_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
             referencedColumns: ["id"]
           },
         ]
@@ -182,6 +235,7 @@ export type Database = {
           id: string
           intitule_formation: string | null
           profile_id: string
+          promotion_id: string | null
         }
         Insert: {
           annee_scolaire: string
@@ -190,6 +244,7 @@ export type Database = {
           id?: string
           intitule_formation?: string | null
           profile_id: string
+          promotion_id?: string | null
         }
         Update: {
           annee_scolaire?: string
@@ -198,6 +253,7 @@ export type Database = {
           id?: string
           intitule_formation?: string | null
           profile_id?: string
+          promotion_id?: string | null
         }
         Relationships: [
           {
@@ -205,6 +261,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcours_cfa_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
         ]
@@ -241,6 +304,38 @@ export type Database = {
           telephone?: string | null
         }
         Relationships: []
+      }
+      promotions: {
+        Row: {
+          annee_scolaire: string | null
+          created_at: string
+          formation_id: string
+          id: string
+          nom: string
+        }
+        Insert: {
+          annee_scolaire?: string | null
+          created_at?: string
+          formation_id: string
+          id?: string
+          nom: string
+        }
+        Update: {
+          annee_scolaire?: string | null
+          created_at?: string
+          formation_id?: string
+          id?: string
+          nom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_preferences: {
         Row: {
