@@ -29,6 +29,13 @@
       "when": 1791750291016,
       "tag": "0003_referentiels",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791750581794,
+      "tag": "0004_promo_years",
+      "breakpoints": true
     }
   ]
 }

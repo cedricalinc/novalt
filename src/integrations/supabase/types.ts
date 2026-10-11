@@ -229,6 +229,7 @@ export type Database = {
       }
       parcours_cfa: {
         Row: {
+          annee_promotion: number | null
           annee_scolaire: string
           created_at: string
           etape_courante: Database["public"]["Enums"]["etape_parcours"]
@@ -238,6 +239,7 @@ export type Database = {
           promotion_id: string | null
         }
         Insert: {
+          annee_promotion?: number | null
           annee_scolaire: string
           created_at?: string
           etape_courante?: Database["public"]["Enums"]["etape_parcours"]
@@ -247,6 +249,7 @@ export type Database = {
           promotion_id?: string | null
         }
         Update: {
+          annee_promotion?: number | null
           annee_scolaire?: string
           created_at?: string
           etape_courante?: Database["public"]["Enums"]["etape_parcours"]
@@ -309,6 +312,7 @@ export type Database = {
         Row: {
           annee_scolaire: string | null
           created_at: string
+          duree_annees: number
           formation_id: string
           id: string
           nom: string
@@ -316,6 +320,7 @@ export type Database = {
         Insert: {
           annee_scolaire?: string | null
           created_at?: string
+          duree_annees?: number
           formation_id: string
           id?: string
           nom: string
@@ -323,6 +328,7 @@ export type Database = {
         Update: {
           annee_scolaire?: string | null
           created_at?: string
+          duree_annees?: number
           formation_id?: string
           id?: string
           nom?: string

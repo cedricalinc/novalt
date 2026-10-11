@@ -1,0 +1,2 @@
+ALTER TABLE public.promotions ADD COLUMN duree_annees smallint NOT NULL DEFAULT 1 CHECK (duree_annees BETWEEN 1 AND 3);
+ALTER TABLE public.parcours_cfa ADD COLUMN annee_promotion smallint CHECK (annee_promotion BETWEEN 1 AND 3);

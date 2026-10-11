@@ -31,11 +31,19 @@ const DOSSIER = ["BROUILLON", "EN_REVISION", "VALIDE", "INCOMPLET"] as const;
 async function fetchCandidats() {
   const { data, error } = await supabase
     .from("parcours_cfa")
-    .select("id, etape_courante, annee_scolaire, intitule_formation, promotion_id, profiles(id, prenom, nom, email, role), admissions_dossier(id, statut_cv, statut_dossier, commentaire_conseiller)")
+    .select("id, etape_courante, annee_scolaire, intitule_formation, promotion_id, annee_promotion, profiles(id, prenom, nom, email, role), admissions_dossier(id, statut_cv, statut_dossier, commentaire_conseiller)")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
 }
+
+async function fetchCands() {
+  const { data, error } = await supabase.from("candidatures").select("candidat_id, statut");
+  if (error) throw error;
+  return data;
+}
+
+const CV_LABEL: Record<string, string> = { VALIDE_CFA: "Validé", A_CORRIGER: "À corriger", EN_ATTENTE_VALIDATION: "En attente" };
 
 type Refs = Awaited<ReturnType<typeof fetchReferentiels>>;
 
@@ -49,6 +57,10 @@ function AdminPage() {
   const [fForm, setFForm] = useState("");
   const [fPromo, setFPromo] = useState("");
   const [q, setQ] = useState("");
+  const [fAnnee, setFAnnee] = useState("");
+  const [view, setView] = useState<"tableau" | "fiches">("tableau");
+  const cands = useQuery({ queryKey: ["admin-cands"], queryFn: fetchCands, enabled: isAdmin });
+  const qc = useQueryClient();
 
   if (!me) return <AppShell title="Espace CFA"><p className="text-sm text-muted-foreground">Chargement…</p></AppShell>;
   if (!isAdmin)
@@ -72,6 +84,7 @@ function AdminPage() {
     if (fPromo && (fPromo === "none" ? p.promotion_id : pr?.id !== fPromo)) return false;
     if (fForm && f?.id !== fForm) return false;
     if (fEtab && e?.id !== fEtab) return false;
+    if (fAnnee && String(p.annee_promotion ?? "") !== fAnnee) return false;
     if (needle && !`${p.profiles?.prenom} ${p.profiles?.nom} ${p.profiles?.email}`.toLowerCase().includes(needle)) return false;
     return true;
   });
@@ -98,7 +111,7 @@ function AdminPage() {
         ))}
       </div>
       {tab === "offres" ? <AdminOffres /> : tab === "referentiels" ? <AdminReferentiels /> : <>
-        <div className="mb-4 grid gap-2 sm:grid-cols-4">
+        <div className="mb-4 grid gap-2 sm:grid-cols-5">
           <Input placeholder="Rechercher un nom, un e-mail…" value={q} onChange={(e) => setQ(e.target.value)} />
           <select className={sel} value={fEtab} onChange={(e) => { setFEtab(e.target.value); setFForm(""); setFPromo(""); }}>
             <option value="">Tous les établissements</option>
@@ -113,8 +126,61 @@ function AdminPage() {
             {!fEtab && !fForm && <option value="none">Sans promotion</option>}
             {promoOpts.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
           </select>
+          <select className={sel} value={fAnnee} onChange={(e) => setFAnnee(e.target.value)}>
+            <option value="">Toutes les années</option>
+            {[1, 2, 3].map((n) => <option key={n} value={n}>Année {n}</option>)}
+          </select>
         </div>
-        <p className="mb-4 text-sm text-muted-foreground">{apprentis.length} apprenti(s)</p>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">{apprentis.length} apprenti(s)</p>
+          <div className="flex gap-1">
+            <Button size="sm" variant={view === "tableau" ? "default" : "outline"} onClick={() => setView("tableau")}>Tableau</Button>
+            <Button size="sm" variant={view === "fiches" ? "default" : "outline"} onClick={() => setView("fiches")}>Fiches</Button>
+          </div>
+        </div>
+        {view === "tableau" ? (
+          <div className="card-soft overflow-x-auto">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr>{["Apprenti", "Promotion", "Année", "Étape", "Avancement", "CV", "Dossier", "Candidatures", "Entretiens", "Acceptée"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {sorted.flatMap(([, g]) => g.items).map((a) => {
+                  const { p: pr, f } = promoInfo(a.promotion_id);
+                  const adm = Array.isArray(a.admissions_dossier) ? a.admissions_dossier[0] : a.admissions_dossier;
+                  const mine = cands.data?.filter((c) => c.candidat_id === a.profiles?.id) ?? [];
+                  const idx = ETAPES.findIndex((s) => s.code === a.etape_courante);
+                  const pct = Math.round(((idx + 1) / ETAPES.length) * 100);
+                  const duree = pr?.duree_annees ?? 1;
+                  return (
+                    <tr key={a.id} className="border-b border-border last:border-0">
+                      <td className="px-3 py-2"><p className="font-medium">{a.profiles?.prenom} {a.profiles?.nom}</p><p className="text-xs text-muted-foreground">{a.profiles?.email}</p></td>
+                      <td className="px-3 py-2 text-xs">{pr ? `${f?.intitule} › ${pr.nom}` : <span className="text-muted-foreground">—</span>}</td>
+                      <td className="px-3 py-2">
+                        <select aria-label="Année" className="h-8 rounded-md border border-input bg-background px-1 text-xs" disabled={!pr} value={a.annee_promotion ?? ""}
+                          onChange={async (e) => {
+                            const { error } = await supabase.from("parcours_cfa").update({ annee_promotion: e.target.value ? Number(e.target.value) : null }).eq("id", a.id);
+                            if (error) toast.error("Enregistrement impossible"); else { toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["admin-candidats"] }); }
+                          }}>
+                          <option value="">—</option>
+                          {Array.from({ length: duree }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}/{duree}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2 text-xs">{ETAPES[idx]?.num} {ETAPES[idx]?.label}</td>
+                      <td className="px-3 py-2"><div className="h-2 w-20 rounded-full bg-muted"><div className="h-2 rounded-full bg-primary" style={{ width: `${pct}%` }} /></div></td>
+                      <td className="px-3 py-2 text-xs">{adm ? <StatusBadge status={adm.statut_cv} /> : "—"}</td>
+                      <td className="px-3 py-2 text-xs">{adm ? <StatusBadge status={adm.statut_dossier} /> : "—"}</td>
+                      <td className="px-3 py-2 text-center">{mine.length}</td>
+                      <td className="px-3 py-2 text-center">{mine.filter((c) => c.statut === "ENTRETIEN_PROGRAMME").length}</td>
+                      <td className="px-3 py-2 text-center">{mine.some((c) => c.statut === "ACCEPTE") ? "Oui" : "—"}</td>
+                    </tr>
+                  );
+                })}
+                {apprentis.length === 0 && <tr><td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">Aucun apprenti</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        ) : (
         <div className="flex flex-col gap-6">
           {sorted.map(([k, g]) => (
             <section key={k} className="space-y-3">
@@ -123,6 +189,7 @@ function AdminPage() {
             </section>
           ))}
         </div>
+        )}
       </>}
     </AppShell>
   );
@@ -162,6 +229,14 @@ function CandidatCard({ p, refs }: { p: Row; refs: Refs | undefined }) {
           })}
         </select>
       </label>
+      {p.promotion_id && (
+        <label className="grid gap-1 text-xs text-muted-foreground">Année dans la promotion
+          <select className={sel} value={p.annee_promotion ?? ""} onChange={(e) => upd("parcours_cfa", p.id, { annee_promotion: e.target.value ? Number(e.target.value) : null })}>
+            <option value="">Non définie</option>
+            {Array.from({ length: refs?.promotions.find((x) => x.id === p.promotion_id)?.duree_annees ?? 1 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>Année {n}</option>)}
+          </select>
+        </label>
+      )}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="grid gap-1 text-xs text-muted-foreground">Étape
           <select className={sel} value={p.etape_courante} onChange={(e) => upd("parcours_cfa", p.id, { etape_courante: e.target.value })}>
