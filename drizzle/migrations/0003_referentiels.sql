@@ -1,0 +1,16 @@
+CREATE TABLE public.etablissements (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), nom text NOT NULL, ville text, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.formations (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), etablissement_id uuid NOT NULL REFERENCES public.etablissements(id) ON DELETE CASCADE, intitule text NOT NULL, niveau text, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.promotions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), formation_id uuid NOT NULL REFERENCES public.formations(id) ON DELETE CASCADE, nom text NOT NULL, annee_scolaire text, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.etablissements, public.formations, public.promotions TO authenticated;
+GRANT ALL ON public.etablissements, public.formations, public.promotions TO service_role;
+ALTER TABLE public.etablissements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.formations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY etab_select ON public.etablissements FOR SELECT TO authenticated USING (true);
+CREATE POLICY etab_admin ON public.etablissements FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY form_select ON public.formations FOR SELECT TO authenticated USING (true);
+CREATE POLICY form_admin ON public.formations FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY promo_select ON public.promotions FOR SELECT TO authenticated USING (true);
+CREATE POLICY promo_admin ON public.promotions FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+ALTER TABLE public.parcours_cfa ADD COLUMN promotion_id uuid REFERENCES public.promotions(id) ON DELETE SET NULL;
+CREATE INDEX ON public.parcours_cfa(promotion_id);
