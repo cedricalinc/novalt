@@ -63,14 +63,21 @@ export function AdminReferentiels() {
                   {data.promotions.filter((p) => p.formation_id === f.id).map((p) => (
                     <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs">
                       {p.nom}
+                      <select aria-label="Durée" className="bg-transparent text-xs text-muted-foreground" value={p.duree_annees}
+                        onChange={(e) => run(supabase.from("promotions").update({ duree_annees: Number(e.target.value) }).eq("id", p.id))}>
+                        {[1, 2, 3].map((n) => <option key={n} value={n}>{n} an{n > 1 ? "s" : ""}</option>)}
+                      </select>
                       <button aria-label="Supprimer" onClick={() => del("promotions", p.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
                     </span>
                   ))}
                   <form className="flex gap-1" onSubmit={async (e) => {
                     e.preventDefault(); const v = promo[f.id]?.trim(); if (!v) return;
-                    if (await run(supabase.from("promotions").insert({ formation_id: f.id, nom: v }))) setPromo({ ...promo, [f.id]: "" });
+                    if (await run(supabase.from("promotions").insert({ formation_id: f.id, nom: v, duree_annees: Number(promo[f.id + ":d"] ?? 1) }))) setPromo({ ...promo, [f.id]: "" });
                   }}>
                     <Input className="h-8 w-40 text-xs" placeholder="Nouvelle promotion" value={promo[f.id] ?? ""} onChange={(e) => setPromo({ ...promo, [f.id]: e.target.value })} />
+                    <select aria-label="Durée" className="h-8 rounded-md border border-input bg-background px-1 text-xs" value={promo[f.id + ":d"] ?? "1"} onChange={(e) => setPromo({ ...promo, [f.id + ":d"]: e.target.value })}>
+                      {[1, 2, 3].map((n) => <option key={n} value={n}>{n} an{n > 1 ? "s" : ""}</option>)}
+                    </select>
                     <Button size="sm" variant="outline" type="submit">+</Button>
                   </form>
                 </div>
