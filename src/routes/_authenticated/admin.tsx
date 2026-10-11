@@ -130,7 +130,7 @@ function AdminPage() {
 
 type Row = Awaited<ReturnType<typeof fetchCandidats>>[number];
 
-function CandidatCard({ p, refs }: { p: Row; refs?: Refs }) {
+function CandidatCard({ p, refs }: { p: Row; refs: Refs | undefined }) {
   const qc = useQueryClient();
   const adm = Array.isArray(p.admissions_dossier) ? p.admissions_dossier[0] : p.admissions_dossier;
   const [comment, setComment] = useState(adm?.commentaire_conseiller ?? "");
