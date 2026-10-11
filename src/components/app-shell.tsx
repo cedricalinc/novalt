@@ -43,7 +43,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           </div>
         </div>
         <nav className="flex flex-col gap-1">
-          {[...NAV, ...(me?.profile.role === "ADMIN_CFA" ? [{ to: "/admin", label: "Espace CFA", icon: ShieldCheck }] as const : [])].map((n) => (
+          {NAV.map((n) => (
             <Link
               key={n.to}
               to={n.to}
