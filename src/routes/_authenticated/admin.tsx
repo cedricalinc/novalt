@@ -29,17 +29,24 @@ const DOSSIER = ["BROUILLON", "EN_REVISION", "VALIDE", "INCOMPLET"] as const;
 async function fetchCandidats() {
   const { data, error } = await supabase
     .from("parcours_cfa")
-    .select("id, etape_courante, annee_scolaire, intitule_formation, profiles(id, prenom, nom, email, role), admissions_dossier(id, statut_cv, statut_dossier, commentaire_conseiller)")
+    .select("id, etape_courante, annee_scolaire, intitule_formation, promotion_id, profiles(id, prenom, nom, email, role), admissions_dossier(id, statut_cv, statut_dossier, commentaire_conseiller)")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
 }
 
+type Refs = Awaited<ReturnType<typeof fetchReferentiels>>;
+
 function AdminPage() {
   const { data: me } = useMe();
-  const [tab, setTab] = useState<"apprentis" | "offres">("apprentis");
+  const [tab, setTab] = useState<"apprentis" | "offres" | "referentiels">("apprentis");
   const isAdmin = me?.profile.role === "ADMIN_CFA";
   const list = useQuery({ queryKey: ["admin-candidats"], queryFn: fetchCandidats, enabled: isAdmin });
+  const refs = useQuery({ ...refQuery, enabled: isAdmin });
+  const [fEtab, setFEtab] = useState("");
+  const [fForm, setFForm] = useState("");
+  const [fPromo, setFPromo] = useState("");
+  const [q, setQ] = useState("");
 
   if (!me) return <AppShell title="Espace CFA"><p className="text-sm text-muted-foreground">Chargement…</p></AppShell>;
   if (!isAdmin)
@@ -50,20 +57,69 @@ function AdminPage() {
       </AppShell>
     );
 
-  const apprentis = list.data?.filter((p) => p.profiles?.role === "CANDIDAT") ?? [];
+  const r = refs.data;
+  const promoInfo = (pid: string | null) => {
+    const p = r?.promotions.find((x) => x.id === pid);
+    const f = r?.formations.find((x) => x.id === p?.formation_id);
+    const e = r?.etablissements.find((x) => x.id === f?.etablissement_id);
+    return { p, f, e };
+  };
+  const needle = q.trim().toLowerCase();
+  const apprentis = (list.data?.filter((p) => p.profiles?.role === "CANDIDAT") ?? []).filter((p) => {
+    const { p: pr, f, e } = promoInfo(p.promotion_id);
+    if (fPromo && (fPromo === "none" ? p.promotion_id : pr?.id !== fPromo)) return false;
+    if (fForm && f?.id !== fForm) return false;
+    if (fEtab && e?.id !== fEtab) return false;
+    if (needle && !`${p.profiles?.prenom} ${p.profiles?.nom} ${p.profiles?.email}`.toLowerCase().includes(needle)) return false;
+    return true;
+  });
+  const groups = new Map<string, { label: string; items: typeof apprentis }>();
+  for (const a of apprentis) {
+    const { p, f, e } = promoInfo(a.promotion_id);
+    const key = p?.id ?? "none";
+    const label = p ? `${e?.nom} › ${f?.intitule} › ${p.nom}` : "Sans promotion";
+    if (!groups.has(key)) groups.set(key, { label, items: [] });
+    groups.get(key)!.items.push(a);
+  }
+  const sorted = [...groups.entries()].sort(([ka, a], [kb, b]) => (ka === "none" ? 1 : kb === "none" ? -1 : a.label.localeCompare(b.label)));
+  const formOpts = r?.formations.filter((f) => !fEtab || f.etablissement_id === fEtab) ?? [];
+  const promoOpts = r?.promotions.filter((p) => formOpts.some((f) => f.id === p.formation_id) && (!fForm || p.formation_id === fForm)) ?? [];
+  const sel = "h-9 rounded-md border border-input bg-background px-2 text-sm";
+
   return (
     <AppShell title="Espace CFA">
-      <div className="mb-6 flex gap-2">
-        {(["apprentis", "offres"] as const).map((t) => (
+      <div className="mb-6 flex flex-wrap gap-2">
+        {(["apprentis", "offres", "referentiels"] as const).map((t) => (
           <Button key={t} size="sm" variant={tab === t ? "default" : "outline"} onClick={() => setTab(t)}>
-            {t === "apprentis" ? "Apprentis" : "Offres & candidatures"}
+            {t === "apprentis" ? "Apprentis" : t === "offres" ? "Offres & candidatures" : "Référentiels"}
           </Button>
         ))}
       </div>
-      {tab === "offres" ? <AdminOffres /> : <>
-        <p className="mb-4 text-sm text-muted-foreground">{apprentis.length} apprenti(s) suivi(s)</p>
-        <div className="flex flex-col gap-3">
-          {apprentis.map((p) => <CandidatCard key={p.id} p={p} />)}
+      {tab === "offres" ? <AdminOffres /> : tab === "referentiels" ? <AdminReferentiels /> : <>
+        <div className="mb-4 grid gap-2 sm:grid-cols-4">
+          <Input placeholder="Rechercher un nom, un e-mail…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <select className={sel} value={fEtab} onChange={(e) => { setFEtab(e.target.value); setFForm(""); setFPromo(""); }}>
+            <option value="">Tous les établissements</option>
+            {r?.etablissements.map((e) => <option key={e.id} value={e.id}>{e.nom}</option>)}
+          </select>
+          <select className={sel} value={fForm} onChange={(e) => { setFForm(e.target.value); setFPromo(""); }}>
+            <option value="">Toutes les formations</option>
+            {formOpts.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
+          </select>
+          <select className={sel} value={fPromo} onChange={(e) => setFPromo(e.target.value)}>
+            <option value="">Toutes les promotions</option>
+            {!fEtab && !fForm && <option value="none">Sans promotion</option>}
+            {promoOpts.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
+          </select>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">{apprentis.length} apprenti(s)</p>
+        <div className="flex flex-col gap-6">
+          {sorted.map(([k, g]) => (
+            <section key={k} className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">{g.label} ({g.items.length})</h2>
+              {g.items.map((p) => <CandidatCard key={p.id} p={p} refs={r} />)}
+            </section>
+          ))}
         </div>
       </>}
     </AppShell>
