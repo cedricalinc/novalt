@@ -103,6 +103,47 @@ export type Database = {
           },
         ]
       }
+      documents_etudiant: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          profile_id: string
+          statut: Database["public"]["Enums"]["statut_cv"]
+          type: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          profile_id: string
+          statut?: Database["public"]["Enums"]["statut_cv"]
+          type?: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          profile_id?: string
+          statut?: Database["public"]["Enums"]["statut_cv"]
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_etudiant_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       etablissements: {
         Row: {
           created_at: string

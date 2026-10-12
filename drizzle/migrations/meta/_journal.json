@@ -36,6 +36,13 @@
       "when": 1791750581794,
       "tag": "0004_promo_years",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791787904771,
+      "tag": "0005_documents_etudiant",
+      "breakpoints": true
     }
   ]
 }
