@@ -12,6 +12,7 @@ import { ETAPES } from "@/lib/mock-data";
 import { AdminOffres } from "@/components/admin-offres";
 import { AdminReferentiels, fetchReferentiels, refQuery } from "@/components/admin-referentiels";
 import { Input } from "@/components/ui/input";
+import { AdminDocuments } from "@/components/documents";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -48,7 +49,7 @@ type Refs = Awaited<ReturnType<typeof fetchReferentiels>>;
 
 function AdminPage() {
   const { data: me } = useMe();
-  const [tab, setTab] = useState<"apprentis" | "offres" | "referentiels">("apprentis");
+  const [tab, setTab] = useState<"apprentis" | "documents" | "offres" | "referentiels">("apprentis");
   const isAdmin = me?.profile.role === "ADMIN_CFA";
   const list = useQuery({ queryKey: ["admin-candidats"], queryFn: fetchCandidats, enabled: isAdmin });
   const refs = useQuery({ ...refQuery, enabled: isAdmin });
@@ -103,13 +104,13 @@ function AdminPage() {
   return (
     <AppShell title="Espace CFA">
       <div className="mb-6 flex flex-wrap gap-2">
-        {(["apprentis", "offres", "referentiels"] as const).map((t) => (
+        {(["apprentis", "documents", "offres", "referentiels"] as const).map((t) => (
           <Button key={t} size="sm" variant={tab === t ? "default" : "outline"} onClick={() => setTab(t)}>
-            {t === "apprentis" ? "Apprentis" : t === "offres" ? "Offres & candidatures" : "Référentiels"}
+            {t === "apprentis" ? "Apprentis" : t === "documents" ? "CV à valider" : t === "offres" ? "Offres & candidatures" : "Référentiels"}
           </Button>
         ))}
       </div>
-      {tab === "offres" ? <AdminOffres /> : tab === "referentiels" ? <AdminReferentiels /> : <>
+      {tab === "documents" ? <AdminDocuments /> : tab === "offres" ? <AdminOffres /> : tab === "referentiels" ? <AdminReferentiels /> : <>
         <div className="mb-4 grid gap-2 sm:grid-cols-5">
           <Input placeholder="Rechercher un nom, un e-mail…" value={q} onChange={(e) => setQ(e.target.value)} />
           <select className={sel} value={fEtab} onChange={(e) => { setFEtab(e.target.value); setFForm(""); setFPromo(""); }}>
@@ -255,6 +256,10 @@ function CandidatCard({ p, refs }: { p: Row; refs: Refs | undefined }) {
           </label>
         </>}
       </div>
+      <details className="rounded-lg border border-border p-2">
+        <summary className="cursor-pointer text-sm font-medium">Documents déposés</summary>
+        <div className="mt-2">{p.profiles?.id && <AdminDocuments profileId={p.profiles.id} />}</div>
+      </details>
       {adm && (
         <div className="space-y-2">
           <Textarea placeholder="Commentaire pour l'apprenti" value={comment} onChange={(e) => setComment(e.target.value)} />

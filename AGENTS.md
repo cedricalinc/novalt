@@ -14,3 +14,4 @@
 - Roles are stored in profiles.role and checked via the security-definer is_admin(); a trigger blocks non-admins from changing roles to prevent privilege escalation.
 - Student pages live under src/routes/_authenticated and read their own rows via the browser client (RLS) through src/lib/use-me.ts; calendar, documents and news stay on mock-data until tables exist.
 - Only CANDIDAT profiles have a parcours/admission; a trigger deletes them when a profile becomes staff, and staff land on /admin instead of Mon parcours, because staff are not students.
+- Student files live in the private 'documents' bucket under <profile_id>/ with one documents_etudiant row each; a trigger derives admissions_dossier.statut_cv from the CV rows so the apply gate follows per-file validation.
