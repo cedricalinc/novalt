@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { useMe, useRefreshMe } from "@/lib/use-me";
 import { supabase } from "@/integrations/supabase/client";
+import { StudentDocuments } from "@/components/documents";
 import { mockAdmission, mockCalendrier, mockDocuments, mockActualites } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -153,25 +154,7 @@ function MonParcours() {
                 </ul>
               )}
 
-              {s.id === "documents" && (
-                <ul className="space-y-2">
-                  {mockDocuments.map((d) => (
-                    <li key={d.nom} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold">{d.nom}</p>
-                        <p className="truncate text-xs text-muted-foreground">{d.fichier ?? "Aucun fichier déposé"}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <StatusBadge status={d.statut} />
-                        {d.fichier ? (
-                          <Button size="icon" variant="ghost" aria-label="Télécharger" onClick={() => toast("Téléchargement disponible prochainement")}><Download /></Button>
-                        ) : null}
-                        <Button size="icon" variant="secondary" aria-label="Déposer" onClick={() => toast("Dépôt de fichier disponible prochainement")}><Upload /></Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              {s.id === "documents" && me && <StudentDocuments profileId={me.profile.id} />}
 
               {s.id === "actus" && (
                 <ul className="space-y-3">
