@@ -43,7 +43,6 @@ async function fetchCands() {
   return data;
 }
 
-const CV_LABEL: Record<string, string> = { VALIDE_CFA: "Validé", A_CORRIGER: "À corriger", EN_ATTENTE_VALIDATION: "En attente" };
 
 type Refs = Awaited<ReturnType<typeof fetchReferentiels>>;
 
